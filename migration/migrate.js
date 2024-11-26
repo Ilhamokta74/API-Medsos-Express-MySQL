@@ -29,7 +29,7 @@ async function migrate() {
         console.log('Koneksi berhasil!');
 
         // Sinkronisasi model ke database
-        await sequelize.sync({ force: true }); // Hati-hati dengan `force: true`, ini akan menghapus tabel yang ada!
+        await sequelize.sync({ force: false }); // Hati-hati dengan `force: true`, ini akan menghapus tabel yang ada!
 
         console.log('Migrasi berhasil!');
     } catch (error) {
