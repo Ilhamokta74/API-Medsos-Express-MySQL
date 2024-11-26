@@ -1,0 +1,23 @@
+{
+  "name": "api-medsos-express",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ilhamokta74/API-Medsos-Express.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ilhamokta74/API-Medsos-Express/issues"
+  },
+  "homepage": "https://github.com/Ilhamokta74/API-Medsos-Express#readme",
+  "dependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
