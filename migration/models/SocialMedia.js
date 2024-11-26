@@ -11,10 +11,20 @@ const SocialMedia = sequelize.define('SocialMedia', {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Name tidak boleh kosong', // Validasi agar name tidak kosong
+            },
+        },
     },
     social_media_url: {
         type: DataTypes.TEXT,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Social Media URL tidak boleh kosong', // Validasi agar social_media_url tidak kosong
+            },
+        },
     },
     user_id: {
         type: DataTypes.INTEGER,

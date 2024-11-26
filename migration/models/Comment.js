@@ -28,6 +28,11 @@ const Comment = sequelize.define('Comment', {
     message: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Message tidak boleh kosong', // Validasi agar message tidak kosong
+            },
+        },
     },
     created_at: {
         type: DataTypes.DATE,

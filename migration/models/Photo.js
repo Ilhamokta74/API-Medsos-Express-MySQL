@@ -11,6 +11,11 @@ const Photo = sequelize.define('Photo', {
     title: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Title tidak boleh kosong', // Validasi agar title tidak kosong
+            },
+        },
     },
     caption: {
         type: DataTypes.STRING,
@@ -19,6 +24,11 @@ const Photo = sequelize.define('Photo', {
     photo_url: {
         type: DataTypes.STRING,
         allowNull: false,
+        validate: {
+            notEmpty: {
+                msg: 'Photo URL tidak boleh kosong', // Validasi agar photo_url tidak kosong
+            },
+        },
     },
     user_id: {
         type: DataTypes.INTEGER,
