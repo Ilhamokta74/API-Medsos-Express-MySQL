@@ -48,8 +48,8 @@ const getDataUser = async (req, res) => {
 const AddDataUser = async (req, res) => {
     const { Username, Email, Password, Age } = req.body;
 
-    const created_at = Date.now()
-    const updated_at = Date.now()
+    const created_at = new Date().toISOString();
+    const updated_at = new Date().toISOString();
 
     if (!Username || !Email || !Password || !Age) {
         return res.status(400).json({
@@ -115,8 +115,8 @@ const UpdateDataUser = async (req, res) => {
     // Hash password sebelum menyimpan
     const HashPassword = await bcrypt.hash(Password, 10); // SaltRounds = 10
 
-    const query = 'UPDATE users SET username = ?, email = ?, password = ?, age = ? WHERE id = ?';
-    db.query(query, [Username, Email, HashPassword, Age, id], (err, results) => {
+    const query = 'UPDATE users SET username = ?, email = ?, password = ?, age = ?, updated_at = ? WHERE id = ?';
+    db.query(query, [Username, Email, HashPassword, Age, updated_at, id], (err, results) => {
         if (err) {
             console.error('Error adding user:', err.message);
 
@@ -149,11 +149,6 @@ const UpdateDataUser = async (req, res) => {
         res.status(200).json({
             responseCode: 200,
             message: 'Data pengguna berhasil diperbarui.',
-            data: {
-                Username,
-                Email,
-                Age,
-            },
         });
     });
 };

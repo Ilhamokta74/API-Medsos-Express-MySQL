@@ -1,6 +1,9 @@
 const express = require('express');
 const User = require(`../api/User`)
 
+// Middleware
+const jwtVerify = require(`../middleware/jwtVerify`)
+
 const router = express.Router();
 
 // Endpoint: Home
@@ -12,11 +15,11 @@ router.get('/', (req, res) => {
 });
 
 // Endpoint User
-router.get('/users', User.getDataUser)
-router.get('/users/:id', User.getDataUser)
+router.get('/users', jwtVerify, User.getDataUser)
+router.get('/users/:id', jwtVerify, User.getDataUser)
 router.post('/users', User.AddDataUser)
-router.put('/users/:id', User.UpdateDataUser)
-router.delete('/users/:id', User.DeleteDataUser)
+router.put('/users/:id', jwtVerify, User.UpdateDataUser)
+router.delete('/users/:id', jwtVerify, User.DeleteDataUser)
 router.post('/users/login', User.loginUser);
 
 module.exports = router;
