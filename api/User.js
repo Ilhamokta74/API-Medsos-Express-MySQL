@@ -8,10 +8,12 @@ const jwtToken = require(`../middleware/jwt`);
 const getDataUser = async (req, res) => {
     const { id } = req.params; // Ambil parameter id jika ada
 
+    const datas_query = "id, username, email, age, created_at, updated_at"
+
     // Query untuk semua data atau data berdasarkan ID
     const query = id
-        ? 'SELECT * FROM users WHERE id = ?'
-        : 'SELECT * FROM users';
+        ? `SELECT ${datas_query} FROM users WHERE id = ?`
+        : `SELECT ${datas_query} FROM users`;
 
     // Parameter untuk query
     const params = id ? [id] : [];
@@ -104,6 +106,8 @@ const AddDataUser = async (req, res) => {
 const UpdateDataUser = async (req, res) => {
     const { id } = req.params;
     const { Username, Email, Password, Age } = req.body;
+
+    const updated_at = new Date().toISOString();
 
     if (!id) {
         return res.status(400).json({
