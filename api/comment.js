@@ -1,66 +1,95 @@
+const { v4: uuidv4 } = require('uuid');
+
+const db = require('../database/database'); // Database connection
+
 // Tambah Komentar pada Photo
 const AddComment = async (req, res) => {
-    const { photo_id, comment } = req.body;
-    const user_id = req.user.username; // Data dari token pengguna
+    const UUID = uuidv4();
+
+    const { id } = req.params;
+    const { message } = req.body;
+    const user_id = req.user.user_id; // Data dari token pengguna
     const created_at = new Date().toISOString();
     const updated_at = created_at;
 
-    if (!photo_id || !comment) {
+    if (!id || !message) {
         return res.status(400).json({ responseCode: 400, message: 'Photo ID dan komentar harus disertakan.' });
     }
 
     const query = `
-        INSERT INTO comments (photo_id, user_id, comment, created_at, updated_at) 
-        VALUES (?, ?, ?, ?, ?)`;
+        INSERT INTO comments (uuid, photo_id, user_id, message, created_at, updated_at) 
+        VALUES (?, ?, ?, ?, ?, ?)`;
 
-    db.query(query, [photo_id, user_id, comment, created_at, updated_at], (err, results) => {
+    db.query(query, [UUID, id, user_id, message, created_at, updated_at], (err, results) => {
         if (err) {
             console.error('Error adding comment:', err.message);
             return res.status(500).json({ responseCode: 500, message: 'Gagal menambahkan komentar.' });
         }
 
-        res.status(201).json({ 
-            responseCode: 201, 
-            message: 'Komentar berhasil ditambahkan.', 
-            data: { photo_id, user_id, comment, created_at, updated_at }
+        res.status(201).json({
+            responseCode: 201,
+            message: 'Komentar berhasil ditambahkan.',
+            data: { UUID, "photo_id":id, user_id, message, created_at, updated_at }
         });
     });
 };
 
 // Ambil Semua Komentar untuk Photo
 const GetComments = async (req, res) => {
-    const { photo_id } = req.params;
+    const { id } = req.params; // Ambil parameter UUID jika ada
 
-    if (!photo_id) {
-        return res.status(400).json({ responseCode: 400, message: 'Photo ID harus disertakan.' });
-    }
+    const datas_query = "uuid, photo_id, user_id, message, created_at, updated_at"
 
-    const query = 'SELECT * FROM comments WHERE photo_id = ?';
+    // Query untuk semua data atau data berdasarkan ID
+    const query = id
+        ? `SELECT ${datas_query} FROM comments WHERE uuid = ?`
+        : `SELECT ${datas_query} FROM comments`;
 
-    db.query(query, [photo_id], (err, results) => {
+    // Parameter untuk query
+    const params = id ? [id] : [];
+
+    db.query(query, params, (err, results) => {
         if (err) {
-            console.error('Error fetching comments:', err.message);
-            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil komentar.' });
+            console.error('Error fetching user data:', err.message);
+            return res.status(500).json({
+                responseCode: 500,
+                message: 'Gagal mengambil data pengguna.',
+                // data: null,
+            });
         }
 
-        res.status(200).json({ responseCode: 200, message: 'Komentar berhasil diambil.', data: results });
+        // Jika pengguna tidak ditemukan (berdasarkan ID)
+        if (id && results.length === 0) {
+            return res.status(404).json({
+                responseCode: 404,
+                message: 'Komentar tidak ditemukan.',
+                // data: null,
+            });
+        }
+
+        // Respons sukses
+        res.status(200).json({
+            responseCode: 200,
+            message: 'Data Komentar berhasil diambil.',
+            data: results,
+        });
     });
 };
 
 // Edit Komentar
 const UpdateComment = async (req, res) => {
-    const { comment_id } = req.params;
-    const { comment } = req.body;
+    const { id } = req.params;
+    const { message } = req.body;
     const updated_at = new Date().toISOString();
-    const user_id = req.user.username; // Data dari token pengguna untuk memastikan otorisasi
+    const user_id = req.user.user_id; // Data dari token pengguna untuk memastikan otorisasi
 
-    if (!comment_id || !comment) {
+    if (!id || !message) {
         return res.status(400).json({ responseCode: 400, message: 'Comment ID dan isi komentar harus disertakan.' });
     }
 
     // Cek apakah komentar milik pengguna saat ini
-    const checkQuery = 'SELECT * FROM comments WHERE id = ? AND user_id = ?';
-    db.query(checkQuery, [comment_id, user_id], (err, results) => {
+    const checkQuery = 'SELECT * FROM comments WHERE uuid = ? AND user_id = ?';
+    db.query(checkQuery, [id, user_id], (err, results) => {
         if (err) {
             console.error('Error verifying comment ownership:', err.message);
             return res.status(500).json({ responseCode: 500, message: 'Gagal memverifikasi komentar.' });
@@ -73,10 +102,10 @@ const UpdateComment = async (req, res) => {
         // Update komentar jika valid
         const updateQuery = `
             UPDATE comments 
-            SET comment = ?, updated_at = ? 
-            WHERE id = ? AND user_id = ?`;
-        
-        db.query(updateQuery, [comment, updated_at, comment_id, user_id], (err, results) => {
+            SET message = ?, updated_at = ? 
+            WHERE uuid = ? AND user_id = ?`;
+
+        db.query(updateQuery, [message, updated_at, id, user_id], (err, results) => {
             if (err) {
                 console.error('Error updating comment:', err.message);
                 return res.status(500).json({ responseCode: 500, message: 'Gagal memperbarui komentar.' });
@@ -86,27 +115,25 @@ const UpdateComment = async (req, res) => {
                 return res.status(404).json({ responseCode: 404, message: 'Komentar tidak ditemukan.' });
             }
 
-            res.status(200).json({ 
-                responseCode: 200, 
-                message: 'Komentar berhasil diperbarui.', 
-                data: { comment_id, comment, updated_at } 
+            res.status(200).json({
+                responseCode: 200,
+                message: 'Komentar berhasil diperbarui.',
             });
         });
     });
 };
 
-
 // Hapus Komentar
 const DeleteComment = async (req, res) => {
-    const { comment_id } = req.params;
+    const { id } = req.params;
 
-    if (!comment_id) {
+    if (!id) {
         return res.status(400).json({ responseCode: 400, message: 'Comment ID harus disertakan.' });
     }
 
-    const query = 'DELETE FROM comments WHERE id = ?';
+    const query = 'DELETE FROM comments WHERE uuid = ?';
 
-    db.query(query, [comment_id], (err, results) => {
+    db.query(query, [id], (err, results) => {
         if (err) {
             console.error('Error deleting comment:', err.message);
             return res.status(500).json({ responseCode: 500, message: 'Gagal menghapus komentar.' });

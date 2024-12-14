@@ -43,7 +43,7 @@ const AddDataPhoto = async (req, res) => {
         }
 
         const photo_url = req.file ? `/static/photos/${folderPath}` : null;
-        const user_id = userData.username;
+        const user_id = userData.user_id;
         const created_at = new Date().toISOString();
         const updated_at = created_at;
 

@@ -39,7 +39,7 @@ const Photo = sequelize.define('Photo', {
         type: DataTypes.STRING,
         references: {
             model: User,
-            key: 'username',
+            key: 'uuid',
         },
         allowNull: false,
     },

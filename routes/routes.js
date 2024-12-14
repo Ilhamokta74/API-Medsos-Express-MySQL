@@ -34,8 +34,8 @@ router.get('/static/photos/:filename', Photo.cekPhotos);
 
 // Endpoint Comment
 router.get('/comment', Comment.GetComments)
-router.get('/comment/:id', Comment.GetComments)
-router.post('/comment', jwtVerify, getDataJwt, Comment.AddComment)
+router.get('/comment/:id', jwtVerify, Comment.GetComments)
+router.post('/comment/:id', jwtVerify, getDataJwt, Comment.AddComment)
 router.put('/comment/:id', jwtVerify, getDataJwt, Comment.UpdateComment)
 router.delete('/comment/:id', jwtVerify, getDataJwt, Comment.DeleteComment)
 

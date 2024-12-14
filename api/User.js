@@ -241,7 +241,7 @@ const loginUser = async (req, res) => {
         });
     }
 
-    const query = 'SELECT username, password FROM users WHERE email = ?';
+    const query = 'SELECT uuid, username, password FROM users WHERE email = ?';
     db.query(query, [Email], async (err, results) => {
         if (err) {
             console.error('Error fetching user:', err.message);
@@ -261,6 +261,7 @@ const loginUser = async (req, res) => {
         const user = results[0];
 
         const username = results[0].username;
+        const userId = results[0].uuid;
 
         // Bandingkan password yang dimasukkan dengan hash di database
         const isMatch = await bcrypt.compare(Password, user.password);
@@ -276,7 +277,7 @@ const loginUser = async (req, res) => {
             responseCode: 200,
             message: 'Login berhasil.',
             data: {
-                Token: await jwtToken(Email, username),
+                Token: await jwtToken(Email, username, userId),
                 expiresIn: 3600
             },
         });
