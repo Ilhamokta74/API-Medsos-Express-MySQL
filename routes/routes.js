@@ -3,7 +3,7 @@ const User = require(`../api/User`)
 const Photo = require(`../api/Photo`)
 
 // Middleware
-const jwtVerify = require(`../middleware/jwtVerify`)
+const { jwtVerify, getDataJwt } = require(`../middleware/jwtVerify`)
 
 const router = express.Router();
 
@@ -26,10 +26,9 @@ router.post('/users/login', User.loginUser);
 // Endpoint Photo
 router.get('/photos', Photo.getDataPhoto);
 router.get('/photos/:id', Photo.getDataPhoto);
-router.post('/photos', jwtVerify, Photo.AddDataPhoto);
-router.put('/photos/:id',jwtVerify, Photo.UpdateDataPhoto);
-router.delete('/photos/:id', jwtVerify, Photo.DeleteDataPhoto);
-router.post('/photos/login', Photo.loginPhoto);
-router.get('/photos/download/:filename', Photo.downloadPhoto);
+router.post('/photos', jwtVerify, getDataJwt, Photo.AddDataPhoto);
+router.put('/photos/:id', jwtVerify, getDataJwt, Photo.UpdateDataPhoto);
+router.delete('/photos/:id', jwtVerify, getDataJwt, Photo.DeleteDataPhoto);
+router.get('/photos/download/:filename', Photo.cekPhotos);
 
 module.exports = router;

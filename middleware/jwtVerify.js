@@ -33,4 +33,21 @@ const jwtVerify = (req, res, next) => {
     });
 };
 
-module.exports = jwtVerify;
+const getDataJwt = (req, res, next) => {
+    // Ambil token dari header Authorization
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Format: "Bearer <token>"
+
+    // Split token menjadi 3 bagian
+    const [header, payload, signature] = token.split('.');
+
+    // Decode payload (bagian kedua) dari Base64
+    const decodedPayload = JSON.parse(Buffer.from(payload, 'base64').toString('utf-8'));
+
+    // Simpan payload ke req untuk middleware atau handler berikutnya
+    req.user = decodedPayload;
+
+    next();
+}
+
+module.exports = { jwtVerify, getDataJwt };

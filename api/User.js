@@ -222,6 +222,8 @@ const loginUser = async (req, res) => {
 
         const user = results[0];
 
+        const username = results[0].username;
+
         // Bandingkan password yang dimasukkan dengan hash di database
         const isMatch = await bcrypt.compare(Password, user.password);
 
@@ -236,7 +238,7 @@ const loginUser = async (req, res) => {
             responseCode: 200,
             message: 'Login berhasil.',
             data: {
-                Token: await jwtToken(Email),
+                Token: await jwtToken(Email, username),
                 expiresIn: 3600
             },
         });

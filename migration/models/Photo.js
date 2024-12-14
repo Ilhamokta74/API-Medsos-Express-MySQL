@@ -31,10 +31,10 @@ const Photo = sequelize.define('Photo', {
         },
     },
     user_id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         references: {
             model: User,
-            key: 'id',
+            key: 'username',
         },
         allowNull: false,
     },

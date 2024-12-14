@@ -1,8 +1,9 @@
 const nanoid = require('nanoid');
 const bcrypt = require('bcrypt'); // Tambahkan bcrypt
+const path = require('path'); // Modul untuk memproses path file
 
+const upload = require('../middleware/upload');
 const db = require('../database/database'); // Database connection
-const jwtToken = require(`../middleware/jwt`);
 
 // Ambil Data Photo
 const getDataPhoto = async (req, res) => {
@@ -13,11 +14,11 @@ const getDataPhoto = async (req, res) => {
     db.query(query, params, (err, results) => {
         if (err) {
             console.error('Error fetching Photo data:', err.message);
-            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil data.', data: null });
+            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil data.'});
         }
 
         if (id && results.length === 0) {
-            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.', data: null });
+            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.'});
         }
 
         res.status(200).json({ responseCode: 200, message: 'Data berhasil diambil.', data: results });
@@ -26,34 +27,37 @@ const getDataPhoto = async (req, res) => {
 
 // Tambah Data Photo
 const AddDataPhoto = async (req, res) => {
-    upload.single('Photo')(req, res, async (err) => {
+    // Data payload dari token
+    const userData = req.user;
+
+    upload.single('photo')(req, res, async (err) => {
+        const folderPath = await req.folderPath;
+
+        const { title, caption } = req.body;
+
         if (err) {
+            console.log(err);
             return res.status(400).json({ responseCode: 400, message: 'Gagal mengunggah file.' });
         }
 
-        const { Photoname, Email, Password, Age } = req.body;
-        const PhotoPath = req.file ? req.file.path : null;
-
-        if (!Photoname || !Email || !Password || !Age) {
-            return res.status(400).json({ responseCode: 400, message: 'Semua data harus diisi.' });
-        }
-
-        const HashPassword = await bcrypt.hash(Password, 10);
-        const query = 'INSERT INTO Photos (Photoname, email, password, age, photo, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
+        const photo_url = req.file ? `/uploads/${folderPath}` : null;
+        const user_id = userData.username;
         const created_at = new Date().toISOString();
         const updated_at = created_at;
 
-        db.query(query, [Photoname, Email, HashPassword, Age, PhotoPath, created_at, updated_at], (err, results) => {
+        const query = 'INSERT INTO photos (title, caption, photo_url, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)';
+
+        db.query(query, [title, caption, photo_url, user_id, created_at, updated_at], (err, results) => {
             if (err) {
                 console.error('Error adding Photo:', err.message);
-                const error = err.code === 'ER_DUP_ENTRY' ? 'Email atau Photoname sudah digunakan.' : 'Gagal menambahkan data.';
+                const error = err.code === 'ER_DUP_ENTRY' ? 'Photoname sudah Tersedia' : 'Gagal menambahkan data.';
                 return res.status(409).json({ responseCode: 409, message: error });
             }
 
             res.status(201).json({
                 responseCode: 201,
                 message: 'Data berhasil ditambahkan.',
-                data: { id: results.insertId, Photoname, Email, Age, Photo: PhotoPath, created_at, updated_at },
+                data: { title, caption, Photo: photo_url, created_at, updated_at },
             });
         });
     });
@@ -62,35 +66,37 @@ const AddDataPhoto = async (req, res) => {
 // Update Data Photo
 const UpdateDataPhoto = async (req, res) => {
     const { id } = req.params;
-    const { Photoname, Email, Password, Age } = req.body;
+
+    // Data payload dari token
+    const userData = req.user;
+
+    const { title, caption } = req.body;
 
     if (!id) {
         return res.status(400).json({ responseCode: 400, message: 'ID harus disertakan.' });
     }
 
-    const HashPassword = Password ? await bcrypt.hash(Password, 10) : null;
     const updated_at = new Date().toISOString();
 
     const query = `
-        UPDATE Photos 
-        SET Photoname = ?, email = ?, ${Password ? 'password = ?,' : ''} age = ?, updated_at = ? 
+        UPDATE photos 
+        SET title = ?, caption = ?, updated_at = ? 
         WHERE id = ?`;
 
-    const params = Password
-        ? [Photoname, Email, HashPassword, Age, updated_at, id]
-        : [Photoname, Email, Age, updated_at, id];
+    const params = [title, caption, updated_at, id]
 
     db.query(query, params, (err, results) => {
-        if (err) {
-            console.error('Error updating Photo:', err.message);
-            return res.status(500).json({ responseCode: 500, message: 'Gagal memperbarui data.' });
-        }
+        console.log(results)
+        // if (err) {
+        //     console.error('Error updating Photo:', err.message);
+        //     return res.status(500).json({ responseCode: 500, message: 'Gagal memperbarui data.' });
+        // }
 
-        if (results.affectedRows === 0) {
-            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.' });
-        }
+        // if (results.affectedRows === 0) {
+        //     return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.' });
+        // }
 
-        res.status(200).json({ responseCode: 200, message: 'Data berhasil diperbarui.' });
+        // res.status(200).json({ responseCode: 200, message: 'Data berhasil diperbarui.' });
     });
 };
 
@@ -117,40 +123,11 @@ const DeleteDataPhoto = async (req, res) => {
     });
 };
 
-// Login Photo
-const loginPhoto = async (req, res) => {
-    const { Email, Password } = req.body;
-
-    if (!Email || !Password) {
-        return res.status(400).json({ responseCode: 400, message: 'Email dan Password harus diisi.' });
-    }
-
-    const query = 'SELECT * FROM Photos WHERE email = ?';
-    db.query(query, [Email], async (err, results) => {
-        if (err) {
-            console.error('Error fetching Photo:', err.message);
-            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil data pengguna.' });
-        }
-
-        if (results.length === 0) {
-            return res.status(404).json({ responseCode: 404, message: 'Pengguna tidak ditemukan.' });
-        }
-
-        const Photo = results[0];
-        const isMatch = await bcrypt.compare(Password, Photo.password);
-
-        if (!isMatch) {
-            return res.status(401).json({ responseCode: 401, message: 'Password salah.' });
-        }
-
-        res.status(200).json({ responseCode: 200, message: 'Login berhasil.', data: { Token: await jwtToken(Email), expiresIn: 3600 } });
-    });
-};
-
 // Download File
-const downloadPhoto = (req, res) => {
+const cekPhotos = (req, res) => {
     const { filename } = req.params;
-    const filePath = path.join(__dirname, '../uploads', filename);
+    const filePath = path.join(__dirname, `../uploads/${filename}`);
+    console.log(filePath);
 
     res.download(filePath, (err) => {
         if (err) {
@@ -160,4 +137,4 @@ const downloadPhoto = (req, res) => {
     });
 };
 
-module.exports = { AddDataPhoto, DeleteDataPhoto, UpdateDataPhoto, getDataPhoto, loginPhoto, downloadPhoto };
+module.exports = { AddDataPhoto, DeleteDataPhoto, UpdateDataPhoto, getDataPhoto, cekPhotos };

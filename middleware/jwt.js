@@ -3,10 +3,11 @@ const jwt = require('jsonwebtoken');
 // Kunci rahasia untuk menandatangani JWT
 const secretKey = 'your_secret_key';
 
-const jwtToken = async (email) => {
+const jwtToken = async (email, username) => {
     try {
         const payload = {
             "email": email,
+            "username": username,
             "roles": "user",
         }
 

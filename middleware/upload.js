@@ -1,28 +1,34 @@
 const multer = require('multer');
-const path = require('path');
+const path = require('path'); // Modul untuk memproses path file
 
-// Konfigurasi Multer untuk menyimpan file
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, './uploads'); // Direktori untuk menyimpan file
+        cb(null, 'uploads'); // Direktori tempat file akan disimpan
     },
     filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname)); // Nama file unik
+        const extension = path.extname(file.originalname); // Ambil ekstensi file
+        const filename = uniqueSuffix + extension;
+
+        cb(null, filename); // Simpan file dengan nama unik
+
+        // Simpan payload ke req untuk middleware atau handler berikutnya
+        req.folderPath = filename;
     },
 });
 
-// Filter untuk hanya menerima file tertentu
-const fileFilter = (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
-        cb(null, true); // Terima file gambar
-    } else {
-        cb(new Error('File bukan gambar!'), false); // Tolak file non-gambar
-    }
-};
-
 const upload = multer({
-    storage: storage,
-    fileFilter: fileFilter,
-    limits: { fileSize: 1024 * 1024 * 5 }, // Maksimal 5 MB
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf']; // Daftar ekstensi yang diizinkan
+        const extension = path.extname(file.originalname).toLowerCase();
+
+        if (!allowedExtensions.includes(extension)) {
+            return cb(new Error(`Ekstensi file tidak diizinkan: ${extension}`));
+        }
+
+        cb(null, true);
+    }
 });
+
+module.exports = upload;
