@@ -3,10 +3,15 @@ const sequelize = require('../../database/sequelize');
 const User = require('./User');
 
 const Photo = sequelize.define('Photo', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
+    uuid: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true, // Validasi agar username menjadi unique
+        validate: {
+            notEmpty: {
+                msg: 'UUID tidak boleh kosong',
+            },
+        },
     },
     title: {
         type: DataTypes.STRING,

@@ -1,5 +1,4 @@
-const nanoid = require('nanoid');
-const bcrypt = require('bcrypt'); // Tambahkan bcrypt
+const { v4: uuidv4 } = require('uuid');
 const path = require('path'); // Modul untuk memproses path file
 
 const upload = require('../middleware/upload');
@@ -8,17 +7,19 @@ const db = require('../database/database'); // Database connection
 // Ambil Data Photo
 const getDataPhoto = async (req, res) => {
     const { id } = req.params;
-    const query = id ? 'SELECT * FROM Photos WHERE id = ?' : 'SELECT * FROM Photos';
+
+    const datas_query = "uuid, title, caption, photo_url, user_id, created_at, updated_at"
+    const query = id ? `SELECT ${datas_query} FROM Photos WHERE uuid = ?` : `SELECT ${datas_query} FROM Photos`;
     const params = id ? [id] : [];
 
     db.query(query, params, (err, results) => {
         if (err) {
             console.error('Error fetching Photo data:', err.message);
-            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil data.'});
+            return res.status(500).json({ responseCode: 500, message: 'Gagal mengambil data.' });
         }
 
         if (id && results.length === 0) {
-            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.'});
+            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.' });
         }
 
         res.status(200).json({ responseCode: 200, message: 'Data berhasil diambil.', data: results });
@@ -30,13 +31,14 @@ const AddDataPhoto = async (req, res) => {
     // Data payload dari token
     const userData = req.user;
 
+    const UUID = uuidv4();
+
     upload.single('photo')(req, res, async (err) => {
         const folderPath = await req.folderPath;
 
         const { title, caption } = req.body;
 
         if (err) {
-            console.log(err);
             return res.status(400).json({ responseCode: 400, message: 'Gagal mengunggah file.' });
         }
 
@@ -45,9 +47,9 @@ const AddDataPhoto = async (req, res) => {
         const created_at = new Date().toISOString();
         const updated_at = created_at;
 
-        const query = 'INSERT INTO photos (title, caption, photo_url, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)';
+        const query = 'INSERT INTO photos (uuid, title, caption, photo_url, user_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
-        db.query(query, [title, caption, photo_url, user_id, created_at, updated_at], (err, results) => {
+        db.query(query, [UUID, title, caption, photo_url, user_id, created_at, updated_at], (err, results) => {
             if (err) {
                 console.error('Error adding Photo:', err.message);
                 const error = err.code === 'ER_DUP_ENTRY' ? 'Photoname sudah Tersedia' : 'Gagal menambahkan data.';
@@ -67,9 +69,6 @@ const AddDataPhoto = async (req, res) => {
 const UpdateDataPhoto = async (req, res) => {
     const { id } = req.params;
 
-    // Data payload dari token
-    const userData = req.user;
-
     const { title, caption } = req.body;
 
     if (!id) {
@@ -81,22 +80,21 @@ const UpdateDataPhoto = async (req, res) => {
     const query = `
         UPDATE photos 
         SET title = ?, caption = ?, updated_at = ? 
-        WHERE id = ?`;
+        WHERE uuid = ?`;
 
     const params = [title, caption, updated_at, id]
 
     db.query(query, params, (err, results) => {
-        console.log(results)
-        // if (err) {
-        //     console.error('Error updating Photo:', err.message);
-        //     return res.status(500).json({ responseCode: 500, message: 'Gagal memperbarui data.' });
-        // }
+        if (err) {
+            console.error('Error updating Photo:', err.message);
+            return res.status(500).json({ responseCode: 500, message: 'Gagal memperbarui data.' });
+        }
 
-        // if (results.affectedRows === 0) {
-        //     return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.' });
-        // }
+        if (results.affectedRows === 0) {
+            return res.status(404).json({ responseCode: 404, message: 'Data tidak ditemukan.' });
+        }
 
-        // res.status(200).json({ responseCode: 200, message: 'Data berhasil diperbarui.' });
+        res.status(200).json({ responseCode: 200, message: 'Data berhasil diperbarui.' });
     });
 };
 
@@ -108,7 +106,7 @@ const DeleteDataPhoto = async (req, res) => {
         return res.status(400).json({ responseCode: 400, message: 'ID harus disertakan.' });
     }
 
-    const query = 'DELETE FROM Photos WHERE id = ?';
+    const query = 'DELETE FROM Photos WHERE uuid = ?';
     db.query(query, [id], (err, results) => {
         if (err) {
             console.error('Error deleting Photo:', err.message);
@@ -127,7 +125,6 @@ const DeleteDataPhoto = async (req, res) => {
 const cekPhotos = (req, res) => {
     const { filename } = req.params;
     const filePath = path.join(__dirname, `../uploads/${filename}`);
-    console.log(filePath);
 
     res.download(filePath, (err) => {
         if (err) {

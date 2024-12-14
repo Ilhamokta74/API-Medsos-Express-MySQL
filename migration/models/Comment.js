@@ -4,10 +4,15 @@ const User = require('./User');
 const Photo = require('./Photo');
 
 const Comment = sequelize.define('Comment', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
+    uuid: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true, // Validasi agar username menjadi unique
+        validate: {
+            notEmpty: {
+                msg: 'UUID tidak boleh kosong',
+            },
+        },
     },
     user_id: {
         type: DataTypes.INTEGER,

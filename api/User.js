@@ -1,4 +1,4 @@
-const nanoid = require('nanoid');
+const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcrypt'); // Tambahkan bcrypt
 
 const db = require('../database/database'); // Database connection
@@ -6,13 +6,13 @@ const jwtToken = require(`../middleware/jwt`);
 
 // Ambil Data User
 const getDataUser = async (req, res) => {
-    const { id } = req.params; // Ambil parameter id jika ada
+    const { id } = req.params; // Ambil parameter UUID jika ada
 
-    const datas_query = "id, username, email, age, created_at, updated_at"
+    const datas_query = "uuid, username, email, age, created_at, updated_at"
 
     // Query untuk semua data atau data berdasarkan ID
     const query = id
-        ? `SELECT ${datas_query} FROM users WHERE id = ?`
+        ? `SELECT ${datas_query} FROM users WHERE uuid = ?`
         : `SELECT ${datas_query} FROM users`;
 
     // Parameter untuk query
@@ -24,7 +24,7 @@ const getDataUser = async (req, res) => {
             return res.status(500).json({
                 responseCode: 500,
                 message: 'Gagal mengambil data pengguna.',
-                data: null,
+                // data: null,
             });
         }
 
@@ -33,7 +33,7 @@ const getDataUser = async (req, res) => {
             return res.status(404).json({
                 responseCode: 404,
                 message: 'Pengguna tidak ditemukan.',
-                data: null,
+                // data: null,
             });
         }
 
@@ -50,10 +50,12 @@ const getDataUser = async (req, res) => {
 const AddDataUser = async (req, res) => {
     const { Username, Email, Password, Age } = req.body;
 
+    const UUID = uuidv4();
+
     const created_at = new Date().toISOString();
     const updated_at = new Date().toISOString();
 
-    if (!Username || !Email || !Password || !Age) {
+    if (!Username || !Email || !Password || !Age || !UUID) {
         return res.status(400).json({
             responseCode: 400,
             message: 'Semua data (Username, Email, Password, Age) harus diisi.',
@@ -63,8 +65,8 @@ const AddDataUser = async (req, res) => {
     // Hash password sebelum menyimpan
     const HashPassword = await bcrypt.hash(Password, 10); // SaltRounds = 10
 
-    const query = 'INSERT INTO users (username, email, password, age, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(query, [Username, Email, HashPassword, Age, created_at, updated_at], (err, results) => {
+    const query = 'INSERT INTO users (uuid, username, email, password, age, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)';
+    db.query(query, [UUID, Username, Email, HashPassword, Age, created_at, updated_at], (err, results) => {
         if (err) {
             console.error('Error adding user:', err.message);
 
@@ -91,7 +93,6 @@ const AddDataUser = async (req, res) => {
             responseCode: 201,
             message: 'Pengguna berhasil ditambahkan.',
             data: {
-                id: results.insertId,
                 Username,
                 Email,
                 Age,
@@ -104,10 +105,8 @@ const AddDataUser = async (req, res) => {
 
 // Update Data User
 const UpdateDataUser = async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // Ambil parameter UUID
     const { Username, Email, Password, Age } = req.body;
-
-    const updated_at = new Date().toISOString();
 
     if (!id) {
         return res.status(400).json({
@@ -116,16 +115,56 @@ const UpdateDataUser = async (req, res) => {
         });
     }
 
-    // Hash password sebelum menyimpan
-    const HashPassword = await bcrypt.hash(Password, 10); // SaltRounds = 10
+    const updated_at = new Date().toISOString();
+    const fieldsToUpdate = [];
+    const values = [];
 
-    const query = 'UPDATE users SET username = ?, email = ?, password = ?, age = ?, updated_at = ? WHERE id = ?';
-    db.query(query, [Username, Email, HashPassword, Age, updated_at, id], (err, results) => {
+    // Tambahkan field yang ingin di-update ke dalam query
+    if (Username) {
+        fieldsToUpdate.push('username = ?');
+        values.push(Username);
+    }
+
+    if (Email) {
+        fieldsToUpdate.push('email = ?');
+        values.push(Email);
+    }
+
+    if (Password) {
+        // Hash password sebelum menyimpan
+        const HashPassword = await bcrypt.hash(Password, 10); // SaltRounds = 10
+        fieldsToUpdate.push('password = ?');
+        values.push(HashPassword);
+    }
+
+    if (Age) {
+        fieldsToUpdate.push('age = ?');
+        values.push(Age);
+    }
+
+    // Pastikan ada field yang di-update
+    if (fieldsToUpdate.length === 0) {
+        return res.status(400).json({
+            responseCode: 400,
+            message: 'Tidak ada data yang diberikan untuk diperbarui.',
+        });
+    }
+
+    // Tambahkan field `updated_at`
+    fieldsToUpdate.push('updated_at = ?');
+    values.push(updated_at);
+
+    // Tambahkan ID pengguna ke array nilai
+    values.push(id);
+
+    const query = `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE uuid = ?`;
+
+    db.query(query, values, (err, results) => {
         if (err) {
-            console.error('Error adding user:', err.message);
+            console.error('Error updating user:', err.message);
 
             // Default error message
-            let error = 'Gagal diperbarui pengguna.';
+            let error = 'Gagal memperbarui pengguna.';
 
             // Tangani error duplikasi berdasarkan pesan
             if (err.code === 'ER_DUP_ENTRY') {
@@ -136,11 +175,10 @@ const UpdateDataUser = async (req, res) => {
                 }
             }
 
-            res.status(409).json({ // Ubah status menjadi 409 untuk konflik (duplikasi data)
+            return res.status(409).json({ // Ubah status menjadi 409 untuk konflik (duplikasi data)
                 responseCode: 409,
                 message: error,
             });
-            return;
         }
 
         if (results.affectedRows === 0) {
@@ -168,7 +206,7 @@ const DeleteDataUser = async (req, res) => {
         });
     }
 
-    const query = 'DELETE FROM users WHERE id = ?';
+    const query = 'DELETE FROM users WHERE uuid = ?';
     db.query(query, [id], (err, results) => {
         if (err) {
             console.error('Error deleting user:', err.message);
@@ -203,7 +241,7 @@ const loginUser = async (req, res) => {
         });
     }
 
-    const query = 'SELECT * FROM users WHERE email = ?';
+    const query = 'SELECT username, password FROM users WHERE email = ?';
     db.query(query, [Email], async (err, results) => {
         if (err) {
             console.error('Error fetching user:', err.message);

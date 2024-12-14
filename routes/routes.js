@@ -1,6 +1,7 @@
 const express = require('express');
-const User = require(`../api/User`)
-const Photo = require(`../api/Photo`)
+const User = require(`../api/User`);
+const Photo = require(`../api/Photo`);
+const Comment = require(`../api/comment`);
 
 // Middleware
 const { jwtVerify, getDataJwt } = require(`../middleware/jwtVerify`)
@@ -30,5 +31,12 @@ router.post('/photos', jwtVerify, getDataJwt, Photo.AddDataPhoto);
 router.put('/photos/:id', jwtVerify, getDataJwt, Photo.UpdateDataPhoto);
 router.delete('/photos/:id', jwtVerify, getDataJwt, Photo.DeleteDataPhoto);
 router.get('/static/photos/:filename', Photo.cekPhotos);
+
+// Endpoint Comment
+router.get('/comment', Comment.GetComments)
+router.get('/comment/:id', Comment.GetComments)
+router.post('/comment', jwtVerify, getDataJwt, Comment.AddComment)
+router.put('/comment/:id', jwtVerify, getDataJwt, Comment.UpdateComment)
+router.delete('/comment/:id', jwtVerify, getDataJwt, Comment.DeleteComment)
 
 module.exports = router;

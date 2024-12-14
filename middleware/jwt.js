@@ -11,7 +11,7 @@ const jwtToken = async (email, username) => {
             "roles": "user",
         }
 
-        const expiresIn = '1h';
+        const expiresIn = '1w';
 
         // Membuat token dengan payload dan durasi kadaluarsa
         const token = jwt.sign(payload, secretKey, { expiresIn });
