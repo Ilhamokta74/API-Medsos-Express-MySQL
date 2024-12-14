@@ -29,6 +29,6 @@ router.get('/photos/:id', Photo.getDataPhoto);
 router.post('/photos', jwtVerify, getDataJwt, Photo.AddDataPhoto);
 router.put('/photos/:id', jwtVerify, getDataJwt, Photo.UpdateDataPhoto);
 router.delete('/photos/:id', jwtVerify, getDataJwt, Photo.DeleteDataPhoto);
-router.get('/photos/download/:filename', Photo.cekPhotos);
+router.get('/static/photos/:filename', Photo.cekPhotos);
 
 module.exports = router;

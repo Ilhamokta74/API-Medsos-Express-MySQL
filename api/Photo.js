@@ -40,7 +40,7 @@ const AddDataPhoto = async (req, res) => {
             return res.status(400).json({ responseCode: 400, message: 'Gagal mengunggah file.' });
         }
 
-        const photo_url = req.file ? `/uploads/${folderPath}` : null;
+        const photo_url = req.file ? `/static/photos/${folderPath}` : null;
         const user_id = userData.username;
         const created_at = new Date().toISOString();
         const updated_at = created_at;
