@@ -19,10 +19,8 @@ router.get('/', (req, res) => {
 // Endpoint User
 router.get('/users', jwtVerify, User.getDataUser)
 router.get('/users/:id', jwtVerify, User.getDataUser)
-router.post('/users', User.AddDataUser)
 router.put('/users/:id', jwtVerify, User.UpdateDataUser)
 router.delete('/users/:id', jwtVerify, User.DeleteDataUser)
-router.post('/users/login', User.loginUser);
 
 // Endpoint Photo
 router.get('/photos', Photo.getDataPhoto);
@@ -38,5 +36,9 @@ router.get('/comment/:id', jwtVerify, Comment.GetComments)
 router.post('/comment/:id', jwtVerify, getDataJwt, Comment.AddComment)
 router.put('/comment/:id', jwtVerify, getDataJwt, Comment.UpdateComment)
 router.delete('/comment/:id', jwtVerify, getDataJwt, Comment.DeleteComment)
+
+// Endpoint User Regist And Login
+router.post('/users/register', User.AddDataUser)
+router.post('/users/login', User.loginUser);
 
 module.exports = router;
